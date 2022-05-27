@@ -2,37 +2,32 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
 public class userMove : MonoBehaviour
 {
     public Rigidbody2D rb;
-    public float originalSpeed = 8f;
-    public float boostTime = 3f;
 
-    private float boostSpeed;   // boost power will be double the normal speed
-    private bool boosting = false;
+    private float speed = 8f;
+    private float boostTime = 0.1f;
+    private Vector2 boostForce = new Vector2(50f, 0f);
     private float moveHoriz;
     private float moveVert;
-    private float rotate;
+    private bool boosting = false;
+    private float boostTimer = 0f;
 
     private void Start()
     {
-        boostSpeed = originalSpeed * 2; // assign boost to be double the normal speed
+
     }
 
     private void Update()
     {
-        
-        if (boosting)
-        {
-            StartCoroutine(boostShip());
-        }
-        else
-        {
-            rb.velocity = new Vector2((moveHoriz * originalSpeed), (moveVert * originalSpeed));
-        }
+        move();     //call to move function
+        boost();    //call to boost function
     }
 
+    // checks for stick input
     public void OnMove(InputValue input)    // assign movement input vectors
     {
         Vector2 inputVec = input.Get<Vector2>();
@@ -41,13 +36,26 @@ public class userMove : MonoBehaviour
         moveVert = inputVec.y;
     }
 
-    public void OnBoost(InputValue input) { boosting = true; }
+    // checks for boost button input
+    public void OnBoost() { boosting = true; }
 
-    IEnumerator boostShip() // allows for boosting while using the WaitForSeconds() function to limit boost time
+    // function to move the player's ship
+    private void move() { rb.velocity = new Vector2((moveHoriz * speed), (moveVert * speed)); }
+    
+    // function to propel the player's ship forward with boost
+    private void boost()
     {
-        // move player based on stick input times speed variable
-        rb.velocity = new Vector2((moveHoriz * boostSpeed), (moveVert * originalSpeed));
-        yield return new WaitForSeconds(boostTime);
-        boosting = false;
+        if (boosting)
+        {
+            boostTimer += Time.deltaTime;   // timer to control boost length
+
+            rb.AddForce(boostForce, ForceMode2D.Force); // propel player forward with boost
+
+            if (boostTimer > boostTime)
+            {
+                boosting = false;   // stop boosting
+                boostTimer = 0f;    // reset timer so player can boost again
+            }
+        }
     }
 }
